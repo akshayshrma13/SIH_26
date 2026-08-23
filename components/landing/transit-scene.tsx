@@ -91,16 +91,20 @@ function TransitingPlanet({ phase }: { phase: React.MutableRefObject<TransitPhas
     const pts: [number, number, number][] = []
     for (let i = 0; i <= 64; i++) {
       const t = (i / 64) * Math.PI * 2
-      pts.push([Math.cos(t) * ORBIT_AMPLITUDE - 3.1, Math.sin(t) * 0.35, Math.sin(t) * 0.6])
+      // Keep the orbit circular in 3D so the planet maintains a safe,
+      // constant distance from the star instead of cutting through it.
+      pts.push([Math.cos(t) * ORBIT_AMPLITUDE - 3.1, 0, Math.sin(t) * ORBIT_AMPLITUDE])
     }
     return pts
   }, [])
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime * ORBIT_SPEED
+    // Match the circular 3D orbit used by the guide line. This keeps the
+    // planet's center exactly ORBIT_AMPLITUDE units from the star.
     const x = Math.cos(t) * ORBIT_AMPLITUDE - 3.1
-    const y = Math.sin(t) * 0.35
-    const z = Math.sin(t) * 0.6
+    const y = 0
+    const z = Math.sin(t) * ORBIT_AMPLITUDE
 
     if (planetRef.current) {
       planetRef.current.position.set(x, y, z)
