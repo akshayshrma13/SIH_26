@@ -43,7 +43,7 @@ export function CompositionChart({ data }: { data: ChemicalAbundance[] }) {
             <LabelList
               dataKey="confidence"
               position="right"
-              formatter={(v: number) => `${Math.round(v * 100)}% conf.`}
+              formatter={(v: unknown) => `${Math.round(Number(v) * 100)}% conf.`}
               fontSize={11}
               fill="var(--muted-foreground)"
             />
