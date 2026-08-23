@@ -44,7 +44,8 @@ export function SpectrumChart({
         data={chartData}
         margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
         onMouseMove={(state) => {
-          const wl = state?.activePayload?.[0]?.payload?.wavelength
+          const payload = state as { activePayload?: Array<{ payload?: { wavelength?: number } }> }
+          const wl = payload.activePayload?.[0]?.payload?.wavelength
           if (typeof wl === "number") onPointHover?.(wl)
         }}
         onMouseLeave={() => onPointHover?.(null)}

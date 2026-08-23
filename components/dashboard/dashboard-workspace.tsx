@@ -30,7 +30,7 @@ export function DashboardWorkspace() {
           <span className="font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
             Observation
           </span>
-          <Select value={observationId} onValueChange={setObservationId}>
+          <Select value={observationId} onValueChange={(value) => value && setObservationId(value)}>
             <SelectTrigger className="w-64">
               <SelectValue />
             </SelectTrigger>
