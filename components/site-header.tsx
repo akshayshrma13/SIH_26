@@ -67,11 +67,13 @@ export function SiteHeader() {
         </div>
 
         <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden">
-              <Menu />
-              <span className="sr-only">Open navigation</span>
-            </Button>
+          <SheetTrigger
+            render={
+              <Button variant="outline" size="icon" className="md:hidden" />
+            }
+          >
+            <Menu />
+            <span className="sr-only">Open navigation</span>
           </SheetTrigger>
           <SheetContent side="right" className="w-72">
             <SheetHeader>

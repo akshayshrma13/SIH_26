@@ -23,14 +23,12 @@ export function Hero() {
             a few parts-per-million dip into a molecular fingerprint.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button asChild size="lg">
-              <Link href="/upload">
-                Upload an observation
-                <ArrowRight data-icon="inline-end" />
-              </Link>
+            <Button size="lg" render={<Link href="/upload" />}>
+              Upload an observation
+              <ArrowRight data-icon="inline-end" />
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/dashboard">Explore demo dashboard</Link>
+            <Button size="lg" variant="outline" render={<Link href="/dashboard" />}>
+              Explore demo dashboard
             </Button>
           </div>
         </div>
