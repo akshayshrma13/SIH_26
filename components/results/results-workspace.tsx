@@ -24,9 +24,14 @@ import { demoObservations, generateSpectrum, demoChemicalComposition } from "@/l
 import { ResultDetailDialog } from "@/components/results/result-detail-dialog"
 import { toast } from "sonner"
 
+function seedForObservation(observationId: string) {
+  const index = demoObservations.findIndex((o) => o.id === observationId)
+  return observationId.charCodeAt(4) * (index + 1) * 13
+}
+
 function buildExportPayload(observationId: string) {
   const obs = demoObservations.find((o) => o.id === observationId)
-  const spectrum = generateSpectrum(observationId.length + observationId.charCodeAt(4))
+  const spectrum = generateSpectrum(seedForObservation(observationId))
   return {
     observation: obs,
     spectrum,
@@ -75,11 +80,12 @@ export function ResultsWorkspace() {
 
   const rows = useMemo(
     () =>
-      demoObservations.map((obs) => {
-        const spectrum = generateSpectrum(obs.id.length + obs.id.charCodeAt(4))
+      demoObservations.map((obs, index) => {
+        const seed = obs.id.charCodeAt(4) * (index + 1) * 13
+        const spectrum = generateSpectrum(seed)
         const avgResidual =
           spectrum.reduce((sum, p) => sum + Math.abs(p.observed - p.recovered), 0) / spectrum.length
-        return { obs, avgResidual }
+        return { obs, avgResidual, seed }
       }),
     [],
   )

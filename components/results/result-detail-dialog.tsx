@@ -24,7 +24,8 @@ export function ResultDetailDialog({
 
   const spectrum = useMemo(() => {
     if (!observationId) return []
-    return generateSpectrum(observationId.length + observationId.charCodeAt(4))
+    const index = demoObservations.findIndex((o) => o.id === observationId)
+    return generateSpectrum(observationId.charCodeAt(4) * (index + 1) * 13)
   }, [observationId])
 
   return (

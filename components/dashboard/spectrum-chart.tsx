@@ -85,17 +85,22 @@ export function SpectrumChart({
           stroke="none"
           fill="transparent"
           isAnimationActive={false}
+          legendType="none"
+          tooltipType="none"
         />
         <Area
           dataKey="bandWidth"
+          name="Uncertainty band"
           stackId="band"
           stroke="none"
           fill="var(--color-upper)"
           fillOpacity={0.14}
           isAnimationActive={false}
+          tooltipType="none"
         />
         <Line
           dataKey="observed"
+          name="Observed"
           stroke="var(--color-observed)"
           strokeWidth={1.25}
           strokeOpacity={0.55}
@@ -104,6 +109,7 @@ export function SpectrumChart({
         />
         <Line
           dataKey="recovered"
+          name="Recovered"
           stroke="var(--color-recovered)"
           strokeWidth={2}
           dot={false}
