@@ -36,7 +36,7 @@ export function StatsSection() {
               archive entry — the full pipeline runs in your browser session.
             </p>
           </div>
-          <Button size="lg" render={<Link href="/upload" />}>
+          <Button size="lg" nativeButton={false} render={<Link href="/upload" />}>
             Start an observation
             <ArrowRight data-icon="inline-end" />
           </Button>

@@ -35,23 +35,25 @@ export function BackendStatusBadge() {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex items-center gap-2 rounded-sm border border-border/60 bg-secondary/40 px-2.5 py-1.5 font-mono text-[10px] tracking-[0.1em] uppercase">
-          <span
-            className={cn(
-              "size-1.5 rounded-full",
-              state === "online" && "bg-primary shadow-[0_0_8px_2px_var(--color-primary)]",
-              state === "offline" && "bg-destructive",
-              state === "connecting" && "animate-pulse bg-muted-foreground",
-            )}
-          />
-          <span className="text-muted-foreground">
-            {state === "online" && "Link nominal"}
-            {state === "offline" && "Link offline"}
-            {state === "connecting" && "Linking"}
-          </span>
-        </div>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <div className="flex items-center gap-2 rounded-sm border border-border/60 bg-secondary/40 px-2.5 py-1.5 font-mono text-[10px] tracking-[0.1em] uppercase">
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                state === "online" && "bg-primary shadow-[0_0_8px_2px_var(--color-primary)]",
+                state === "offline" && "bg-destructive",
+                state === "connecting" && "animate-pulse bg-muted-foreground",
+              )}
+            />
+            <span className="text-muted-foreground">
+              {state === "online" && "Link nominal"}
+              {state === "offline" && "Link offline"}
+              {state === "connecting" && "Linking"}
+            </span>
+          </div>
+        }
+      />
       <TooltipContent className="font-mono text-xs">
         API target: {API_BASE_URL}
         <br />
