@@ -34,3 +34,16 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python backend
+backend_venv/
+__pycache__/
+*.pyc
+/data/
+
+# Model + data artefacts go in via Git LFS — see .gitattributes.
+# *.pt, *.pkl and *.npy are tracked by LFS, so they are NOT ignored.
+
+# Except this one: 1.34 GB, over GitHub's 1 GB free LFS quota on its own,
+# and nothing in the app loads it. See backend/app/ml/stage1.py.
+stage2_model.pickle

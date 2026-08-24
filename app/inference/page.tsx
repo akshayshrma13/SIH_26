@@ -4,7 +4,7 @@ import { InferenceWorkspace } from "@/components/inference/inference-workspace"
 export const metadata: Metadata = {
   title: "Model Inference — Ariel·Spec",
   description:
-    "Select a model architecture and run live spectrum-recovery inference, or load precomputed demo results.",
+    "Run the two-stage spectrum-recovery pipeline against an observation, or load precomputed results.",
 }
 
 export default function InferencePage() {
@@ -18,9 +18,9 @@ export default function InferencePage() {
           Run spectrum recovery
         </h1>
         <p className="text-pretty leading-relaxed text-muted-foreground">
-          Choose a model architecture and run live inference against your
-          observation, or load precomputed demo results to explore the results
-          workspace immediately.
+          Run the two-stage pipeline against your observation — a statistical
+          spectrum estimator followed by the trained composition network — or load
+          precomputed results to explore the results workspace immediately.
         </p>
       </div>
 

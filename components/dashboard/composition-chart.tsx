@@ -14,6 +14,15 @@ const chartConfig: ChartConfig = {
 export function CompositionChart({ data }: { data: ChemicalAbundance[] }) {
   const chartData = [...data].sort((a, b) => b.abundance - a.abundance)
 
+  // The axis range follows the data instead of being fixed: the model can
+  // return abundances well outside the -7..-2 range the demo data used, and a
+  // fixed domain would clip those bars.
+  const values = chartData.flatMap((c) => [c.abundance, c.lower ?? c.abundance, c.upper ?? c.abundance])
+  const domain: [number, number] =
+    values.length > 0
+      ? [Math.floor(Math.min(...values)) - 0.5, Math.ceil(Math.max(...values)) + 0.5]
+      : [-7, -2]
+
   return (
     <div className="flex flex-col gap-4">
       <ChartContainer config={chartConfig} className="aspect-auto h-56 w-full">
@@ -23,7 +32,7 @@ export function CompositionChart({ data }: { data: ChemicalAbundance[] }) {
           margin={{ top: 4, right: 24, bottom: 0, left: 0 }}
         >
           <CartesianGrid horizontal={false} stroke="var(--border)" strokeOpacity={0.4} />
-          <XAxis type="number" domain={[-7, -2]} hide />
+          <XAxis type="number" domain={domain} hide />
           <YAxis
             type="category"
             dataKey="formula"
@@ -55,7 +64,14 @@ export function CompositionChart({ data }: { data: ChemicalAbundance[] }) {
         {chartData.map((c) => (
           <li key={c.formula} className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">{c.molecule}</span>
-            <span className="font-mono text-foreground">{c.abundance.toFixed(1)}</span>
+            <span className="font-mono text-foreground">
+              {c.abundance.toFixed(2)}
+              {c.lower !== undefined && c.upper !== undefined && (
+                <span className="ml-1.5 text-muted-foreground">
+                  ±{((c.upper - c.lower) / 2).toFixed(2)}
+                </span>
+              )}
+            </span>
           </li>
         ))}
       </ul>
