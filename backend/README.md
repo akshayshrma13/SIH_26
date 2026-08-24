@@ -33,11 +33,11 @@ re-downloading multi-GB copies.
 
 ### The model files
 
-The backend also needs `stage1_model.pt`, `stage1_scalers.pkl` and
-`test_array.npy` in the **project root**. They are gitignored, so a fresh clone
-will not have them — see the root
-[README](../README.md#1-add-the-model-and-data-files). Without them the server
-starts but returns an error on the first request.
+`stage1_model.pt`, `stage1_scalers.pkl` and `test_array.npy` live in the
+**project root** and are committed via Git LFS. If you cloned without LFS
+installed you will have text pointer files instead of real models, and the
+backend will fail to load them — run `git lfs install && git lfs pull` to fix
+it. Check with `git lfs ls-files`.
 
 ## The pipeline
 

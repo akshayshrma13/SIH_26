@@ -9,20 +9,36 @@ Next.js frontend + FastAPI backend, both running locally.
 
 **Prerequisites:** Python 3.10+ and Node.js 18+.
 
-### 1. Add the model and data files
+### 1. Get the model files (Git LFS)
 
-These are **not in the repo** — they are too large for GitHub. Get them from the
-project owner and put all four in the project root:
+The model and data files are committed via **Git LFS**, so you need it installed
+*before* cloning:
+
+```powershell
+git lfs install
+git clone https://github.com/akshayshrma13/SIH_26.git
+```
+
+Already cloned without LFS? You'll have small text pointer files instead of real
+models. Fix it with:
+
+```powershell
+git lfs install
+git lfs pull
+```
 
 | File | What it is | Size |
 | --- | --- | --- |
-| `stage1_model.pt` | the trained CompositionNet weights | ~900 KB |
+| `stage1_model.pt` | trained CompositionNet weights | ~900 KB |
 | `stage1_scalers.pkl` | the input/output scalers saved with it | ~3 KB |
 | `test_array.npy` | 20 Ariel planets, the built-in observation catalogue | ~100 KB |
-| `train.py` | *(in the repo)* the script that produced the model | — |
+| `train.py` | the script that produced the model *(plain git, not LFS)* | ~12 KB |
 
-Without the first three the backend starts but returns an error on the first
-request. `stage2_model.pickle` is **not** needed — nothing uses it.
+Verify with `git lfs ls-files` — you should see three entries.
+
+> `stage2_model.pickle` is **not** in the repo and is **not needed**. It is
+> 1.34 GB, over GitHub's free LFS quota on its own, and nothing in the app loads
+> it. See [backend/README.md](backend/README.md) for the background.
 
 ### 2. Install the backend
 
