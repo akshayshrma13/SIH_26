@@ -34,3 +34,15 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python backend
+backend_venv/
+__pycache__/
+*.pyc
+/data/
+
+# model + data artefacts (too large for git)
+*.pt
+*.pkl
+*.pickle
+*.npy

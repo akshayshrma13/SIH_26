@@ -11,10 +11,27 @@ function seededRandom(seed: number) {
   }
 }
 
-export function LightCurvePreview({ seed = 42 }: { seed?: number }) {
+/**
+ * Small sparkline shown under an ingested observation.
+ *
+ * When `points` is supplied (the wavelength/depth preview the backend returns
+ * from /api/upload) it plots that real data. Without it, it falls back to a
+ * synthetic transit light curve so the archive tab still has something to show.
+ */
+export function LightCurvePreview({
+  seed = 42,
+  points,
+}: {
+  seed?: number
+  points?: { wavelength: number; depth: number }[]
+}) {
   const data = useMemo(() => {
+    if (points && points.length > 0) {
+      return points.map((p) => ({ t: p.wavelength, flux: p.depth }))
+    }
+
     const rand = seededRandom(seed)
-    const points: { t: number; flux: number }[] = []
+    const synthetic: { t: number; flux: number }[] = []
     const transitStart = 60
     const transitEnd = 100
     for (let i = 0; i < 160; i++) {
@@ -25,10 +42,10 @@ export function LightCurvePreview({ seed = 42 }: { seed?: number }) {
         const depth = 0.012 * (1 - Math.pow((i - mid) / width, 2))
         flux -= Math.max(depth, 0)
       }
-      points.push({ t: i, flux: Number(flux.toFixed(5)) })
+      synthetic.push({ t: i, flux: Number(flux.toFixed(5)) })
     }
-    return points
-  }, [seed])
+    return synthetic
+  }, [seed, points])
 
   return (
     <div className="h-24 w-full rounded-md border border-border/60 bg-secondary/20 p-2">

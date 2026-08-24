@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Download, FileJson, FileSpreadsheet, FileText, Eye } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { Download, FileJson, FileSpreadsheet, FileText, Eye, Loader2, WifiOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -19,26 +19,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { demoObservations, generateSpectrum, demoChemicalComposition } from "@/lib/demo-data"
+import { demoObservations, type Observation } from "@/lib/demo-data"
+import { API_ROUTES, fetchObservations, fetchResult, type ApiResult } from "@/lib/api"
 import { ResultDetailDialog } from "@/components/results/result-detail-dialog"
 import { toast } from "sonner"
-
-function seedForObservation(observationId: string) {
-  const index = demoObservations.findIndex((o) => o.id === observationId)
-  return observationId.charCodeAt(4) * (index + 1) * 13
-}
-
-function buildExportPayload(observationId: string) {
-  const obs = demoObservations.find((o) => o.id === observationId)
-  const spectrum = generateSpectrum(seedForObservation(observationId))
-  return {
-    observation: obs,
-    spectrum,
-    chemicalComposition: demoChemicalComposition,
-    generatedAt: new Date().toISOString(),
-  }
-}
 
 function downloadBlob(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type })
@@ -52,46 +38,129 @@ function downloadBlob(content: string, filename: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
-function exportJson(observationId: string) {
-  const payload = buildExportPayload(observationId)
-  downloadBlob(JSON.stringify(payload, null, 2), `${observationId}-results.json`, "application/json")
-  toast.success("JSON export downloaded")
+/** Full result as JSON — spectrum, uncertainty bands, composition and metrics. */
+async function exportJson(observationId: string) {
+  try {
+    const result = await fetchResult(observationId)
+    downloadBlob(
+      JSON.stringify(result, null, 2),
+      `${observationId}-results.json`,
+      "application/json",
+    )
+    toast.success("JSON export downloaded")
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "Export failed")
+  }
 }
 
+/** CSV comes straight from the backend so the file matches what the model ran on. */
 function exportCsv(observationId: string) {
-  const payload = buildExportPayload(observationId)
-  const header = "wavelength,observed,recovered,lower,upper"
-  const rows = payload.spectrum.map(
-    (p) => `${p.wavelength},${p.observed},${p.recovered},${p.lower},${p.upper}`,
-  )
-  downloadBlob([header, ...rows].join("\n"), `${observationId}-spectrum.csv`, "text/csv")
-  toast.success("CSV export downloaded")
+  window.open(API_ROUTES.exportCsv(observationId), "_blank")
+  toast.success("CSV export started")
 }
 
-function exportPdf(observationId: string) {
-  const obs = demoObservations.find((o) => o.id === observationId)
-  const html = `<!doctype html><html><head><title>${obs?.name} Report</title></head><body style="font-family: monospace; padding: 40px;"><h1>${obs?.name}</h1><p>Instrument: ${obs?.instrument}</p><p>Status: ${obs?.status}</p><p>Generated: ${new Date().toISOString()}</p></body></html>`
-  downloadBlob(html, `${observationId}-report.pdf`, "application/pdf")
-  toast.success("PDF report downloaded")
+/** A printable one-page summary. Opens the browser print dialog to save as PDF. */
+async function exportReport(observationId: string) {
+  try {
+    const result = await fetchResult(observationId)
+    const rows = result.composition
+      .map(
+        (c) =>
+          `<tr><td>${c.molecule} (${c.formula})</td><td>${c.abundance.toFixed(2)}</td><td>${Math.round(
+            c.confidence * 100,
+          )}%</td></tr>`,
+      )
+      .join("")
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${result.observation.name} — Recovery report</title>
+<style>body{font-family:ui-monospace,monospace;padding:40px;color:#111}h1{font-size:20px}table{border-collapse:collapse;margin-top:12px}td,th{border:1px solid #ccc;padding:6px 10px;font-size:13px;text-align:left}</style>
+</head><body>
+<h1>${result.observation.name}</h1>
+<p>Instrument: ${result.observation.instrument}<br>Pipeline: ${result.stages.map((s) => s.name).join(" → ")}<br>Generated: ${result.createdAt}</p>
+<h2>Recovery metrics</h2>
+<table><tr><th>Noise removed</th><td>${result.metrics.noiseReductionPercent.toFixed(1)}%</td></tr>
+<tr><th>Mean 1σ</th><td>${result.metrics.meanSigmaPpm.toFixed(1)} ppm</td></tr>
+${result.metrics.rmsePpm !== undefined ? `<tr><th>RMSE vs truth</th><td>${result.metrics.rmsePpm.toFixed(1)} ppm (observed ${result.metrics.observedRmsePpm?.toFixed(1)} ppm)</td></tr>` : ""}
+<tr><th>Planet temperature</th><td>${result.planetProperties.temperatureK.value.toFixed(0)} K</td></tr>
+<tr><th>Planet radius</th><td>${result.planetProperties.radiusJupiter.value.toFixed(3)} R<sub>J</sub></td></tr></table>
+<h2>Molecular abundances (log10 mixing ratio)</h2>
+<table><tr><th>Molecule</th><th>Abundance</th><th>Confidence</th></tr>${rows}</table>
+</body></html>`
+
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) {
+      toast.error("Allow pop-ups to export the report")
+      return
+    }
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    toast.success("Report ready — save as PDF from the print dialog")
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "Export failed")
+  }
+}
+
+type Row = {
+  obs: Observation
+  result: ApiResult | null
 }
 
 export function ResultsWorkspace() {
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [rows, setRows] = useState<Row[]>([])
+  const [loading, setLoading] = useState(true)
+  const [offline, setOffline] = useState(false)
 
-  const rows = useMemo(
-    () =>
-      demoObservations.map((obs, index) => {
-        const seed = obs.id.charCodeAt(4) * (index + 1) * 13
-        const spectrum = generateSpectrum(seed)
-        const avgResidual =
-          spectrum.reduce((sum, p) => sum + Math.abs(p.observed - p.recovered), 0) / spectrum.length
-        return { obs, avgResidual, seed }
-      }),
-    [],
-  )
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchObservations(controller.signal)
+      .then(async (list) => {
+        setRows(list.map((obs) => ({ obs, result: null })))
+        setLoading(false)
+
+        // Fetch each result in turn and fill the row in as it arrives. Doing
+        // them one at a time keeps the first request from blocking the others,
+        // since the backend computes a result the first time it is asked for.
+        for (const obs of list) {
+          if (controller.signal.aborted) return
+          try {
+            const result = await fetchResult(obs.id, controller.signal)
+            setRows((current) =>
+              current.map((row) => (row.obs.id === obs.id ? { ...row, result } : row)),
+            )
+          } catch {
+            // Leave that row showing "—"; one bad result must not stop the rest.
+          }
+        }
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+        setOffline(true)
+        setRows(demoObservations.map((obs) => ({ obs, result: null })))
+        setLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [])
+
+  const openDetail = useCallback((id: string) => setDetailId(id), [])
 
   return (
     <div className="flex flex-col gap-6">
+      {offline && (
+        <Alert>
+          <WifiOff />
+          <AlertTitle>Backend unreachable</AlertTitle>
+          <AlertDescription>
+            Showing the bundled observation list without recovery metrics. Start the
+            backend with <code className="font-mono text-xs">python backend/run.py</code>.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card className="border-border/60 bg-card/60">
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div>
@@ -100,6 +169,7 @@ export function ResultsWorkspace() {
             </CardTitle>
             <CardDescription>Per-observation recovery summary and export</CardDescription>
           </div>
+          {loading && <Loader2 className="size-4 animate-spin text-muted-foreground" strokeWidth={2} />}
         </CardHeader>
         <CardContent>
           <Table>
@@ -108,12 +178,14 @@ export function ResultsWorkspace() {
                 <TableHead>Observation</TableHead>
                 <TableHead>Instrument</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Avg. residual (ppm)</TableHead>
+                <TableHead>Noise removed</TableHead>
+                <TableHead>Mean 1σ (ppm)</TableHead>
+                <TableHead>Temp (K)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map(({ obs, avgResidual }) => (
+              {rows.map(({ obs, result }) => (
                 <TableRow key={obs.id}>
                   <TableCell className="font-medium text-foreground">{obs.name}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
@@ -121,22 +193,33 @@ export function ResultsWorkspace() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="font-mono text-[10px] uppercase">
-                      {obs.status}
+                      {result ? "complete" : obs.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {avgResidual.toFixed(1)}
+                    {result ? `${result.metrics.noiseReductionPercent.toFixed(1)}%` : "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {result ? result.metrics.meanSigmaPpm.toFixed(0) : "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {result ? result.planetProperties.temperatureK.value.toFixed(0) : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <Button variant="ghost" size="icon-sm" onClick={() => setDetailId(obs.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={offline}
+                        onClick={() => openDetail(obs.id)}
+                      >
                         <Eye />
                         <span className="sr-only">View details</span>
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           render={
-                            <Button variant="ghost" size="icon-sm">
+                            <Button variant="ghost" size="icon-sm" disabled={offline}>
                               <Download />
                               <span className="sr-only">Export</span>
                             </Button>
@@ -148,11 +231,11 @@ export function ResultsWorkspace() {
                               <FileSpreadsheet data-icon="inline-start" />
                               Export CSV
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => exportJson(obs.id)}>
+                            <DropdownMenuItem onClick={() => void exportJson(obs.id)}>
                               <FileJson data-icon="inline-start" />
                               Export JSON
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => exportPdf(obs.id)}>
+                            <DropdownMenuItem onClick={() => void exportReport(obs.id)}>
                               <FileText data-icon="inline-start" />
                               Export PDF report
                             </DropdownMenuItem>

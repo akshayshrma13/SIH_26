@@ -1,0 +1,26 @@
+# Backend dependencies.
+#
+# The provided venv (`backend_venv`) was created with --system-site-packages,
+# so torch / numpy / scipy / scikit-learn / pandas are inherited from the
+# system Python and are NOT reinstalled. Pinned versions below are the ones
+# this backend was verified against.
+
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+python-multipart==0.0.32
+
+torch==2.5.1
+numpy==1.26.4
+scipy==1.14.1
+scikit-learn==1.6.1
+pandas==2.2.3
+
+# Optional. Only needed to accept .fits uploads; requires numpy>=2, which
+# conflicts with the scipy build above, so it is left out by default.
+# astropy>=6.0
+
+# Optional. Only needed to load the real 1.4 GB Stage 1 model
+# (stage2_model.pickle) -- see backend/app/ml/stage1.py.
+# dill
+# cupy-cuda12x

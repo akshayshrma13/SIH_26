@@ -9,13 +9,17 @@ export type SpectrumPoint = {
   recovered: number
   lower: number
   upper: number
+  sigma?: number // 1σ uncertainty, ppm — backend only
+  truth?: number // known clean spectrum, ppm — catalogue planets only
 }
 
 export type ChemicalAbundance = {
   molecule: string
   formula: string
-  abundance: number // log10 mixing ratio, arbitrary demo scale
+  abundance: number // log10 mixing ratio
   confidence: number // 0-1
+  lower?: number // Q1 of the posterior — backend only
+  upper?: number // Q3 of the posterior — backend only
 }
 
 export type Observation = {
@@ -30,9 +34,12 @@ export type Observation = {
 
 export type ModelArchitecture = {
   id: string
+  stage: number
   name: string
+  type: "statistical" | "machine-learning"
+  typeLabel: string
   description: string
-  latency: string
+  output: string
   accuracy: string
 }
 
@@ -113,24 +120,25 @@ export const demoObservations: Observation[] = [
 
 export const modelArchitectures: ModelArchitecture[] = [
   {
-    id: "spectra-net-v3",
-    name: "SpectraNet v3",
-    description: "Residual CNN denoiser tuned for Ariel AIRS channel noise profiles.",
-    latency: "~4.2s / observation",
-    accuracy: "RMSE 0.031",
+    id: "spectrum-estimator",
+    stage: 1,
+    name: "Spectrum Estimator",
+    type: "statistical",
+    typeLabel: "Statistical estimator",
+    description:
+      "Recovers the transmission spectrum from a noisy observation using per-bin means and standard deviations, shrinking each bin toward its local mean in proportion to how much of its scatter is noise.",
+    output: "283 wavelength bins + 1σ uncertainty",
+    accuracy: "RMSE 339.7 → 69.9 ppm",
   },
   {
-    id: "deep-transit-transformer",
-    name: "Deep Transit Transformer",
-    description: "Attention-based sequence model capturing long-range wavelength correlations.",
-    latency: "~9.8s / observation",
-    accuracy: "RMSE 0.024",
-  },
-  {
-    id: "bayes-atmos-vae",
-    name: "Bayes-Atmos VAE",
-    description: "Variational encoder producing full posterior uncertainty bands.",
-    latency: "~14.1s / observation",
-    accuracy: "RMSE 0.027",
+    id: "composition-net",
+    stage: 2,
+    name: "CompositionNet",
+    type: "machine-learning",
+    typeLabel: "Machine learning model",
+    description:
+      "PyTorch network (104 → 512 → 256 → 128 → 14) trained on the Ariel data challenge. Predicts each quantity as a median plus a positive half-width, giving a Q1/Q2/Q3 posterior.",
+    output: "Radius, temperature, log H2O/CO2/CO/CH4/NH3",
+    accuracy: "stage1_model.pt",
   },
 ]
