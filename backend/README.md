@@ -17,15 +17,27 @@ so no extra configuration is needed. Start the frontend with `npm run dev`.
 
 ### The environment
 
-`backend_venv/` was created with `--system-site-packages`, so it reuses the
-already-installed `torch`, `numpy`, `scipy`, `scikit-learn` and `pandas` instead
-of downloading multi-GB copies. Only `fastapi`, `uvicorn` and `python-multipart`
-live inside it. To rebuild it:
-
 ```powershell
-python -m venv backend_venv --system-site-packages
-.\backend_venv\Scripts\python.exe -m pip install fastapi uvicorn python-multipart
+python -m venv backend_venv
+.\backend_venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 ```
+
+Everything is pinned in [requirements.txt](requirements.txt), verified on Python
+3.12.2 (3.10+ required, for the `X | None` type syntax). Note that `numpy` is
+held below 2.3 because `scipy` 1.14.1 needs it — bump both together.
+
+If you already have `torch`, `numpy`, `scipy`, `scikit-learn` and `pandas`
+installed system-wide, add `--system-site-packages` to the `venv` command and
+install only `fastapi uvicorn pydantic python-multipart`, to avoid
+re-downloading multi-GB copies.
+
+### The model files
+
+The backend also needs `stage1_model.pt`, `stage1_scalers.pkl` and
+`test_array.npy` in the **project root**. They are gitignored, so a fresh clone
+will not have them — see the root
+[README](../README.md#1-add-the-model-and-data-files). Without them the server
+starts but returns an error on the first request.
 
 ## The pipeline
 

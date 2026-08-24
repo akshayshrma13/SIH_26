@@ -1,26 +1,30 @@
-# Backend dependencies.
+# Backend dependencies — install with:
+#     pip install -r backend/requirements.txt
 #
-# The provided venv (`backend_venv`) was created with --system-site-packages,
-# so torch / numpy / scipy / scikit-learn / pandas are inherited from the
-# system Python and are NOT reinstalled. Pinned versions below are the ones
-# this backend was verified against.
+# Verified on Python 3.12.2. Python 3.10+ is required (the code uses the
+# `X | None` type syntax).
 
+# --- Web service ---
 fastapi==0.104.1
 uvicorn==0.24.0
 pydantic==2.5.0
-python-multipart==0.0.32
+python-multipart==0.0.32     # required for file uploads
 
+# --- Stage 2: the trained network ---
+# CPU-only torch is plenty here — the model is small and runs in milliseconds.
+# For a CUDA build instead, see https://pytorch.org/get-started/locally/
 torch==2.5.1
+
+# --- Stage 1 + data handling ---
+# numpy is pinned below 2.3 because scipy 1.14.1 requires it. Bump both
+# together if you upgrade either one.
 numpy==1.26.4
 scipy==1.14.1
-scikit-learn==1.6.1
-pandas==2.2.3
+scikit-learn==1.6.1          # loads the scalers saved alongside the model
+pandas==2.2.3                # CSV parsing for uploads
 
-# Optional. Only needed to accept .fits uploads; requires numpy>=2, which
-# conflicts with the scipy build above, so it is left out by default.
+# --- Optional ---
+# Only needed to accept .fits uploads. It requires numpy>=2, which conflicts
+# with the scipy pin above, so it is left out by default. CSV and NPY uploads
+# work without it.
 # astropy>=6.0
-
-# Optional. Only needed to load the real 1.4 GB Stage 1 model
-# (stage2_model.pickle) -- see backend/app/ml/stage1.py.
-# dill
-# cupy-cuda12x

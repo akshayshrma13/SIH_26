@@ -5,6 +5,52 @@ predicts the atmosphere's chemical composition and temperature.
 
 Next.js frontend + FastAPI backend, both running locally.
 
+## Setup
+
+**Prerequisites:** Python 3.10+ and Node.js 18+.
+
+### 1. Add the model and data files
+
+These are **not in the repo** — they are too large for GitHub. Get them from the
+project owner and put all four in the project root:
+
+| File | What it is | Size |
+| --- | --- | --- |
+| `stage1_model.pt` | the trained CompositionNet weights | ~900 KB |
+| `stage1_scalers.pkl` | the input/output scalers saved with it | ~3 KB |
+| `test_array.npy` | 20 Ariel planets, the built-in observation catalogue | ~100 KB |
+| `train.py` | *(in the repo)* the script that produced the model | — |
+
+Without the first three the backend starts but returns an error on the first
+request. `stage2_model.pickle` is **not** needed — nothing uses it.
+
+### 2. Install the backend
+
+```powershell
+python -m venv backend_venv
+.\backend_venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+```
+
+On macOS or Linux, use `python3 -m venv backend_venv` and
+`./backend_venv/bin/python -m pip install -r backend/requirements.txt`.
+
+<details>
+<summary>Already have torch, numpy, scipy, scikit-learn and pandas installed?</summary>
+
+Reuse them instead of downloading multi-GB copies:
+
+```powershell
+python -m venv backend_venv --system-site-packages
+.\backend_venv\Scripts\python.exe -m pip install fastapi uvicorn pydantic python-multipart
+```
+</details>
+
+### 3. Install the frontend
+
+```powershell
+npm install
+```
+
 ## Run it
 
 Two terminals, from the project root:
@@ -16,13 +62,27 @@ Two terminals, from the project root:
 
 ```powershell
 # 2) frontend — http://localhost:3000
-npm install     # first time only
 npm run dev
 ```
 
 Open <http://localhost:3000>. The badge in the header turns to **Link nominal**
 once it reaches the backend. If the backend is not running, every page falls back
 to bundled demo data and says so in a banner.
+
+Check <http://localhost:8000/api/health> to confirm both stages loaded, or
+<http://localhost:8000/docs> for interactive API docs.
+
+Stop either server with `Ctrl+C`. Auto-reload is off by default — restart the
+backend after editing it. See [backend/run.py](backend/run.py) for why.
+
+### If something goes wrong
+
+| Symptom | Cause |
+| --- | --- |
+| Header says **Link offline** | The backend is not running, or not on port 8000 |
+| Errors mentioning `stage1_model.pt` | The model files from step 1 are missing |
+| Edits to the backend seem to do nothing | A stale server still holds port 8000 — check with `netstat -ano \| findstr :8000`, expect one PID |
+| `.fits` upload rejected | Optional — needs `astropy`, see `backend/requirements.txt`. Use CSV instead |
 
 ## What each page does
 
